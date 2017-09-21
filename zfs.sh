@@ -13,13 +13,26 @@ fi
 kldload zfs
 sysctl vfs.zfs.min_auto_ashift=12
 mkdir /tmp/zroot /tmp/bootpool
+
+# root pool: encrypted
+# boot pool: unencrypted
+
+# root pool
 zpool create -o altroot=/tmp/zroot zroot /dev/${1}
+
+# boot pool
 zpool create -o altroot=/tmp/bootpool bootpool /dev/${2}
 zfs set checksum=fletcher4 zroot
+zfs set checksum=fletcher4 bootpool
 zfs set atime=off zroot
+zfs set atime=off bootpool
 
+# This layout of datasets is needed for boot environments
+# As /bootpool is on another partition, it's not possible to use it, but it will
+# be in the future
 zfs create -o mountpoint=none zroot/ROOT
 zfs create -o mountpoint=/ zroot/ROOT/default
+
 zfs create -o mountpoint=/tmp -o compression=on -o exec=on -o setuid=off zroot/tmp
 chmod 1777 /tmp/zroot/tmp
 
@@ -44,4 +57,5 @@ zfs create -o mountpoint=/var/run    -o exec=off -o setuid=off                  
 zfs create -o mountpoint=/var/tmp    -o compression=lzjb -o exec=on -o setuid=off zroot/var/tmp
 chmod 1777 /tmp/zroot/var/tmp
 
+# Make zroot/ROOT/default bootable
 zpool set bootfs=zroot/ROOT/default zroot

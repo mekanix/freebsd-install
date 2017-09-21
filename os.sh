@@ -5,6 +5,7 @@ if [ -z ${1} ]; then
     exit 1
 fi
 
+# Download {base,kernel}.txz only if not present on the medium
 if [ -f /usr/freebsd-dist/base.txz ]; then
     cp /usr/freebsd-dist/base.txz /tmp/zroot
     cp /usr/freebsd-dist/kernel.txz /tmp/zroot
@@ -31,10 +32,14 @@ chroot /tmp/zroot make -C /etc/mail aliases
 mv /tmp/zroot/boot /tmp/bootpool/bootpool/
 cd /tmp/zroot
 ln -s bootpool/boot
+
+# The key we generated is going to be used for booting, too
 mv /tmp/${1}.key /tmp/bootpool/bootpool/boot/encryption.key
 
+# Bare minimum
 echo 'zfs_enable="YES"' >>/tmp/zroot/etc/rc.conf
 echo 'hostname="feebsd1"' >>/tmp/zroot/etc/rc.conf
+# Change "vtnet0" with your interface
 echo 'ifconfig_vtnet0="DHCP"' >>/tmp/zroot/etc/rc.conf
 
 echo 'aesni_load="YES"' >>/tmp/bootpool/bootpool/boot/loader.conf
